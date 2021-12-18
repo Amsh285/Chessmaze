@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Chessmaze
 {
-    public static class ChessmazeAlgorithm
+    public static partial class ChessmazeAlgorithm
     {
         static ChessmazeAlgorithm()
         {
@@ -60,11 +60,21 @@ namespace Chessmaze
         {
             Assert.NotNull(map, nameof(map));
 
+            return GetFieldInformation(map, FieldType.Cluster);
+        }
+
+        public static IEnumerable<FieldInformationSearchResult> GetNodes(FieldMap map)
+        {
+            return GetFieldInformation(map, FieldType.Node, FieldType.End, FieldType.Start);
+        }
+
+        public static IEnumerable<FieldInformationSearchResult> GetFieldInformation(FieldMap map, params FieldType[] type)
+        {
             for (int x = 0; x < map.X; x++)
             {
                 for (int y = 0; y < map.Y; y++)
                 {
-                    if (map[x, y].Type == FieldType.Cluster)
+                    if (type.Contains(map[x, y].Type))
                         yield return new FieldInformationSearchResult(map, map[x, y], new System.Drawing.Point(x, y));
                 }
             }
@@ -83,6 +93,108 @@ namespace Chessmaze
 
             map[startPosition.X, startPosition.Y].Type = FieldType.Start;
             map[endPosition.X, endPosition.Y].Type = FieldType.End;
+        }
+
+        public static IEnumerable<Edge> GetEdges(FieldMap map)
+        {
+            Assert.NotNull(map, nameof(map));
+
+            IEnumerable<FieldInformationSearchResult> nodes = GetNodes(map);
+            List<Edge> edges = new List<Edge>();
+            int countIterations = 0;
+
+            foreach (FieldInformationSearchResult currentNode in nodes)
+            {
+                IEnumerable<FieldInformationSearchResult> nodesToConnect = nodes.Where(n => n.Position.X != currentNode.Position.X || n.Position.Y != currentNode.Position.Y);
+                List<int> hashCodes = nodesToConnect.Select(n => n.GetHashCode())
+                    .ToList();
+
+                foreach (FieldInformationSearchResult item in nodesToConnect)
+                {
+                    int x = currentNode.Position.X, y = currentNode.Position.Y;
+
+                    Edge currentRoute = new Edge()
+                    {
+                        From = currentNode,
+                        To = item,
+                        CoordFrom = currentNode.Position,
+                        CoordTo = item.Position,
+                        Cost = 0,
+                        VisitedFields = new List<FieldInformationSearchResult>()
+                    };
+
+                    ++countIterations;
+
+                    if (edges.Any(r => r.CoordFrom == currentRoute.CoordTo && r.CoordTo == currentRoute.CoordFrom))
+                        continue;
+
+                    while (item.Position.Y != y || item.Position.X != x)
+                    {
+                        if (item.Position.Y > y)
+                            ++y;
+                        else if (item.Position.Y < y)
+                            --y;
+
+                        if (item.Position.X > x)
+                            ++x;
+                        else if (item.Position.X < x)
+                            --x;
+
+                        FieldType type = map[x, y].Type;
+
+                        bool canOverride = type == FieldType.Empty || type == FieldType.Cluster || type == FieldType.Obstacle;
+
+                        ++currentRoute.Cost;
+                        currentRoute.VisitedFields.Add(
+                            new FieldInformationSearchResult(
+                                map,
+                                new FieldInformation()
+                                {
+                                    Type = canOverride ? FieldType.Road : type
+                                },
+                                new Point(x, y)
+                            )
+                        );
+                    }
+
+                    currentRoute.VisitedFields = currentRoute.VisitedFields
+                        .SkipLast(1)
+                        .ToList();
+                    edges.Add(currentRoute);
+                }
+            }
+
+            return edges;
+        }
+
+        public static void PlaceRoutes(FieldMap map)
+        {
+            Assert.NotNull(map, nameof(map));
+
+            List<Edge> edges = ChessmazeAlgorithm.GetEdges(map)
+                    .ToList();
+
+            int routeNumber = 1;
+
+            IEnumerable<FieldInformationSearchResult> nodes = ChessmazeAlgorithm.GetNodes(map);
+            List<Edge> edgesToKeep = new List<Edge>();
+
+            foreach (FieldInformationSearchResult item in nodes)
+            {
+                IEnumerable<Edge> toAdd = edges.Where(e => e.CoordFrom == item.Position)
+                    .OrderBy(e => e.Cost)
+                    .Take(2);
+
+                edgesToKeep.AddRange(toAdd);
+            }
+
+            foreach (Edge e in edgesToKeep)
+            {
+                foreach (FieldInformationSearchResult node in e.VisitedFields)
+                    map[node.Position.X, node.Position.Y].Type = node.AssociatedField.Type;
+
+                ++routeNumber;
+            }
         }
 
         public class Quadrant
@@ -125,8 +237,8 @@ namespace Chessmaze
                     int mapX = rngProvider.Next(q.Start.X, q.Start.X + q.X);
                     int mapY = rngProvider.Next(q.Start.Y, q.Start.Y + q.Y);
 
-                    if(map[mapX, mapY].Type != FieldType.Start && map[mapX, mapY].Type != FieldType.End
-                        && rngProvider.Next(0,5) == 3)
+                    if (map[mapX, mapY].Type != FieldType.Start && map[mapX, mapY].Type != FieldType.End
+                        && rngProvider.Next(0, 5) == 3)
                         map[mapX, mapY].Type = FieldType.Node;
                 }
             }
