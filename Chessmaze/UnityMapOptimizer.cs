@@ -39,7 +39,7 @@ namespace Chessmaze
             fieldsToSurround.Add(ChessmazeAlgorithm.GetEndNode(map));
 
             IEnumerable<FieldInformation> fieldsToOverrride = fieldsToSurround.SelectMany(f => GetSurroundingFields(map, f))
-                .Where(f => f.Type != FieldType.Node && f.Type != FieldType.End && f.Type != FieldType.Start);
+                .Where(f => f.Type != FieldType.Node && f.Type != FieldType.End && f.Type != FieldType.Start && f.Type != FieldType.Wall);
 
             foreach (FieldInformation field in fieldsToOverrride)
                 field.Type = FieldType.Road;

@@ -9,6 +9,7 @@ namespace Chessmaze
         Obstacle,
         Road,
         Node,
-        End
+        End,
+        Wall
     }
 }

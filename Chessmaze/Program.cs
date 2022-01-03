@@ -13,30 +13,30 @@ namespace Chessmaze
 
         private static void ShowObstacleSampes()
         {
-            for (int i = 0; i < 5; i++)
+            for (int i = 0; i < 10; i++)
             {
                 Console.WriteLine($"Map Nr: {i}");
 
-                FieldMap test = new FieldMap(50, 50);
-                ChessmazeAlgorithm.PlaceClusters(test);
-                ChessmazeAlgorithm.PlaceObstacles(test);
-                ChessmazeAlgorithm.PlaceStartAndEndPoint(test);
-                ValidateMap(test, i);
+                FieldMap testMap = new FieldMap(50, 50);
+                ChessmazeAlgorithm.PlaceClusters(testMap);
+                ChessmazeAlgorithm.PlaceObstacles(testMap);
+                ChessmazeAlgorithm.PlaceStartAndEndPoint(testMap);
+                ValidateMap(testMap, i);
 
-                ChessmazeAlgorithm.PlaceNodes(test);
-                ValidateMap(test, i);
+                ChessmazeAlgorithm.PlaceNodes(testMap);
+                ValidateMap(testMap, i);
 
-                ChessmazeAlgorithm.PlaceRoutes(test);
-                ValidateMap(test, i);
+                ChessmazeAlgorithm.PlaceRoutes(testMap);
+                ValidateMap(testMap, i);
 
-                UnityMapOptimizer.DoubleDiagonalRoutes(test);
-                ValidateMap(test, i);
+                UnityMapOptimizer.DoubleDiagonalRoutes(testMap);
+                ValidateMap(testMap, i);
 
-                UnityMapOptimizer.SurroundNodes(test);
-                ValidateMap(test, i);
+                UnityMapOptimizer.SurroundNodes(testMap);
+                ValidateMap(testMap, i);
 
-                ConsoleMapPrinter.Print(test);
-                ValidateMap(test, i);
+                ConsoleMapPrinter.Print(testMap);
+                ValidateMap(testMap, i);
             }
         }
 
@@ -51,6 +51,11 @@ namespace Chessmaze
 
             if (end == null)
                 throw new ValidationException($"No End Node found. mapindex: {mapIndex}");
+
+            int wallFieldsCount = map.X* 4 - 4;
+
+            if (wallFieldsCount != ChessmazeAlgorithm.GetWalls(map).Count())
+                throw new ValidationException($"Wall was overriden!");
         }
     }
 }

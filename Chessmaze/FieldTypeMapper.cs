@@ -45,6 +45,8 @@ namespace Chessmaze
                     return 'E';
                 case FieldType.Node:
                     return 'O';
+                case FieldType.Wall:
+                    return '-';
                 default:
                     throw new NotSupportedException($"FieldType: {value} is not supported.");
             }
