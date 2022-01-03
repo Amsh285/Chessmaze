@@ -27,6 +27,9 @@ namespace Chessmaze
                     else if (type == FieldType.Node)
                         Console.ForegroundColor = ConsoleColor.Yellow;
 
+                    //if (map[x, y].IsDiagonal)
+                    //    Console.ForegroundColor = ConsoleColor.Magenta;
+
                     Console.Write($" {FieldTypeMapper.MapType(type)} ");
                     Console.ResetColor();
                 }

@@ -63,6 +63,9 @@ namespace Chessmaze
             return GetFieldInformation(map, FieldType.Cluster);
         }
 
+        public static FieldInformationSearchResult GetStartNode(FieldMap map) => GetFieldInformation(map, FieldType.Start).First();
+        public static FieldInformationSearchResult GetEndNode(FieldMap map) => GetFieldInformation(map, FieldType.End).First();
+
         public static IEnumerable<FieldInformationSearchResult> GetNodes(FieldMap map)
         {
             return GetFieldInformation(map, FieldType.Node, FieldType.End, FieldType.Start);
@@ -112,6 +115,7 @@ namespace Chessmaze
                 foreach (FieldInformationSearchResult item in nodesToConnect)
                 {
                     int x = currentNode.Position.X, y = currentNode.Position.Y;
+                    
 
                     Edge currentRoute = new Edge()
                     {
@@ -130,6 +134,8 @@ namespace Chessmaze
 
                     while (item.Position.Y != y || item.Position.X != x)
                     {
+                        int oldX = x, oldY = y;
+
                         if (item.Position.Y > y)
                             ++y;
                         else if (item.Position.Y < y)
@@ -143,6 +149,7 @@ namespace Chessmaze
                         FieldType type = map[x, y].Type;
 
                         bool canOverride = type == FieldType.Empty || type == FieldType.Cluster || type == FieldType.Obstacle;
+                        bool isDiagonal = x != oldX && y != oldY;
 
                         ++currentRoute.Cost;
                         currentRoute.VisitedFields.Add(
@@ -150,11 +157,12 @@ namespace Chessmaze
                                 map,
                                 new FieldInformation()
                                 {
-                                    Type = canOverride ? FieldType.Road : type
+                                    Type = canOverride ? FieldType.Road : type,
+                                    IsDiagonal = isDiagonal
                                 },
                                 new Point(x, y)
                             )
-                        );
+                        ); ;
                     }
 
                     currentRoute.VisitedFields = currentRoute.VisitedFields
@@ -191,7 +199,10 @@ namespace Chessmaze
             foreach (Edge e in edgesToKeep)
             {
                 foreach (FieldInformationSearchResult node in e.VisitedFields)
+                {
                     map[node.Position.X, node.Position.Y].Type = node.AssociatedField.Type;
+                    map[node.Position.X, node.Position.Y].IsDiagonal = node.AssociatedField.IsDiagonal;
+                }
 
                 ++routeNumber;
             }

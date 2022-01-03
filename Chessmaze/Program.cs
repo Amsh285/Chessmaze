@@ -17,7 +17,7 @@ namespace Chessmaze
             {
                 Console.WriteLine($"Map Nr: {i}");
 
-                FieldMap test = new FieldMap(30, 30);
+                FieldMap test = new FieldMap(50, 50);
                 ChessmazeAlgorithm.PlaceClusters(test);
                 ChessmazeAlgorithm.PlaceObstacles(test);
                 ChessmazeAlgorithm.PlaceStartAndEndPoint(test);
@@ -27,6 +27,13 @@ namespace Chessmaze
                 ValidateMap(test, i);
 
                 ChessmazeAlgorithm.PlaceRoutes(test);
+                ValidateMap(test, i);
+
+                UnityMapOptimizer.DoubleDiagonalRoutes(test);
+                ValidateMap(test, i);
+
+                UnityMapOptimizer.SurroundNodes(test);
+                ValidateMap(test, i);
 
                 ConsoleMapPrinter.Print(test);
                 ValidateMap(test, i);
