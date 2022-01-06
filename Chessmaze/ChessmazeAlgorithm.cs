@@ -14,15 +14,15 @@ namespace Chessmaze
             rngProvider = new Random(Guid.NewGuid().GetHashCode());
         }
 
-        public static void PlaceClusters(FieldMap map, int num_clusters = 3, int probability_range = 101)
+        public static void PlaceClusters(FieldMap map, int num_clusters = 10, int probability_range = 101)
         {
             Assert.NotNull(map, nameof(map));
 
             int used_clusters = 0;
 
-            for (int y = 0; y < map.Y; y++)
+            for (int y = 1; y < map.Y - 1; y++)
             {
-                for (int x = 0; x < map.X; x++)
+                for (int x = 1; x < map.X - 1; x++)
                 {
                     int next = rngProvider.Next(1, probability_range);
 
@@ -63,6 +63,10 @@ namespace Chessmaze
             return GetFieldInformation(map, FieldType.Cluster);
         }
 
+        public static FieldInformationSearchResult GetStartNode(FieldMap map) => GetFieldInformation(map, FieldType.Start).First();
+        public static FieldInformationSearchResult GetEndNode(FieldMap map) => GetFieldInformation(map, FieldType.End).First();
+        public static IEnumerable<FieldInformationSearchResult> GetWalls(FieldMap map) => GetFieldInformation(map, FieldType.Wall);
+
         public static IEnumerable<FieldInformationSearchResult> GetNodes(FieldMap map)
         {
             return GetFieldInformation(map, FieldType.Node, FieldType.End, FieldType.Start);
@@ -88,8 +92,8 @@ namespace Chessmaze
             int x = (int)(map.X * scale);
             int y = (int)(map.Y * scale);
 
-            System.Drawing.Point startPosition = new System.Drawing.Point(rngProvider.Next(0, x), rngProvider.Next(0, y));
-            System.Drawing.Point endPosition = new System.Drawing.Point(map.X - 1 - startPosition.X, map.Y - 1 - startPosition.Y);
+            System.Drawing.Point startPosition = new System.Drawing.Point(rngProvider.Next(1, x-1), rngProvider.Next(1, y-1));
+            System.Drawing.Point endPosition = new System.Drawing.Point(map.X - 1 - startPosition.X - 1 , map.Y - 1 - startPosition.Y - 1);
 
             map[startPosition.X, startPosition.Y].Type = FieldType.Start;
             map[endPosition.X, endPosition.Y].Type = FieldType.End;
@@ -112,6 +116,7 @@ namespace Chessmaze
                 foreach (FieldInformationSearchResult item in nodesToConnect)
                 {
                     int x = currentNode.Position.X, y = currentNode.Position.Y;
+                    
 
                     Edge currentRoute = new Edge()
                     {
@@ -130,6 +135,8 @@ namespace Chessmaze
 
                     while (item.Position.Y != y || item.Position.X != x)
                     {
+                        int oldX = x, oldY = y;
+
                         if (item.Position.Y > y)
                             ++y;
                         else if (item.Position.Y < y)
@@ -143,6 +150,7 @@ namespace Chessmaze
                         FieldType type = map[x, y].Type;
 
                         bool canOverride = type == FieldType.Empty || type == FieldType.Cluster || type == FieldType.Obstacle;
+                        bool isDiagonal = x != oldX && y != oldY;
 
                         ++currentRoute.Cost;
                         currentRoute.VisitedFields.Add(
@@ -150,11 +158,12 @@ namespace Chessmaze
                                 map,
                                 new FieldInformation()
                                 {
-                                    Type = canOverride ? FieldType.Road : type
+                                    Type = canOverride ? FieldType.Road : type,
+                                    IsDiagonal = isDiagonal
                                 },
                                 new Point(x, y)
                             )
-                        );
+                        ); ;
                     }
 
                     currentRoute.VisitedFields = currentRoute.VisitedFields
@@ -191,7 +200,10 @@ namespace Chessmaze
             foreach (Edge e in edgesToKeep)
             {
                 foreach (FieldInformationSearchResult node in e.VisitedFields)
+                {
                     map[node.Position.X, node.Position.Y].Type = node.AssociatedField.Type;
+                    map[node.Position.X, node.Position.Y].IsDiagonal = node.AssociatedField.IsDiagonal;
+                }
 
                 ++routeNumber;
             }
@@ -237,7 +249,7 @@ namespace Chessmaze
                     int mapX = rngProvider.Next(q.Start.X, q.Start.X + q.X);
                     int mapY = rngProvider.Next(q.Start.Y, q.Start.Y + q.Y);
 
-                    if (map[mapX, mapY].Type != FieldType.Start && map[mapX, mapY].Type != FieldType.End
+                    if (map[mapX, mapY].Type != FieldType.Start && map[mapX, mapY].Type != FieldType.End && map[mapX, mapY].Type != FieldType.Wall
                         && rngProvider.Next(0, 5) == 3)
                         map[mapX, mapY].Type = FieldType.Node;
                 }

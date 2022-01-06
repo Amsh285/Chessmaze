@@ -8,13 +8,14 @@ namespace Chessmaze
 {
     public sealed class FieldMap
     {
+
         public int X { get; }
         public int Y { get; }
 
         public FieldMap(int x, int y)
         {
-            X = x;
-            Y = y;
+            X = x + 2; // plus two for walls
+            Y = y + 2;
 
             map = new FieldInformation[X, Y];
             InitializeMap();
@@ -26,6 +27,14 @@ namespace Chessmaze
             {
                 for (int y = 0; y < Y; y++)
                     this[x, y] = new FieldInformation();
+            }
+
+            for(int y = 0; y < Y; y++)
+            {
+                this[0, y].Type = FieldType.Wall;
+                this[X-1, y].Type = FieldType.Wall;
+                this[y, 0].Type = FieldType.Wall;
+                this[y, Y-1].Type = FieldType.Wall;
             }
         }
 
